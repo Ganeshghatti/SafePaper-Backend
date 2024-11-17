@@ -23,8 +23,8 @@ app.get("/", (req, res) => {
 });
 
 // Protected routes
-app.use("/api", userRoutes);
-app.use("/api", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/auth", authRoutes);
 
 // Connect to Database
 connectDB();
