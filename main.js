@@ -11,33 +11,23 @@ dotenv.config({ path: path.join(__dirname, "api", ".env") });
 
 const app = express();
 
-// Connect to Database
-connectDB();
-
-// Middleware
-// app.use(
-//   cors({
-//     origin: [
-//       "https://admin.safepaper.in",
-//       "http://localhost:5173",
-//       "http://localhost:5174",
-//       "https://safepaper.in",
-//     ],
-//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-//     allowedHeaders: ["Content-Type", "Authorization"],
-//   })
-// );
+// Middleware setup should come first
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(authRoutes);
-app.use(userRoutes);
 
-// Root route
+// Root route (public route)
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to NEET Paper Management API" });
 });
+
+// Protected routes
+app.use('/api', userRoutes);
+app.use('/api', authRoutes);
+
+// Connect to Database
+connectDB();
 
 // Error handling middleware
 app.use((err, req, res, next) => {
