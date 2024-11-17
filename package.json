@@ -14,8 +14,8 @@
     "validator": "^13.12.0"
   },
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js",
     "create-admin": "node scripts/createAdmin.js"
   },
   "devDependencies": {
