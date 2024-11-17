@@ -3,9 +3,16 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const adminAuth = require('../middleware/adminAuth');
 
-// Routes that require top-admin authorization
-router.post('/paper-setter', adminAuth, userController.createPaperSetter);
-router.post('/guardian', adminAuth, userController.createGuardian);
-router.post('/exam-center', adminAuth, userController.createExamCenter);
+// All routes are protected by adminAuth middleware
+router.use(adminAuth);
+
+// Create user
+router.post('/', userController.createUser);
+
+// Get all users (can filter by role using query parameter)
+router.get('/', userController.getAllUsers);
+
+// Delete user
+router.delete('/:id', userController.deleteUser);
 
 module.exports = router;
