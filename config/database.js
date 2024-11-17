@@ -1,15 +1,15 @@
 const mongoose = require("mongoose");
 
-const connectdatabase = async () => {
+const connectDB = async () => {
   try {
-    // this is db from aniket mongodb account
     await mongoose.connect(
-      "mongodb+srv://ganeshghatti6:vH5QoAtQNMsIrjjG@safepaper.8x5px.mongodb.net/?retryWrites=true&w=majority&appName=SafePaper"
+      "mongodb+srv://ganeshghatti6:MXWAcXoYvCYvGGSd@safepaper.8x5px.mongodb.net/safepaper?retryWrites=true&w=majority&appName=SafePaper"
     );
-
-    console.log("db connection successful");
+    console.log("MongoDB Connected Successfully");
   } catch (error) {
-    console.log("db connection failed" + error.message);
+    console.error("MongoDB Connection Error:", error.message);
+    process.exit(1);
   }
 };
-module.exports = connectdatabase;
+
+module.exports = connectDB;
