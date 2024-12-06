@@ -4,6 +4,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const questionRoutes = require("./routes/questionRoutes");
 const dotenv = require("dotenv");
 const path = require("path");
 
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 // Protected routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/questions", questionRoutes);
 
 // Connect to Database
 connectDB();
