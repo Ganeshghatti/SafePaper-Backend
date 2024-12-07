@@ -33,7 +33,10 @@ app.use("/api/exams", examRoutes);
 
 // Connect to Database
 connectDB();
-setInterval(startCronJobs, 1000 * 60);
+setInterval(() => {
+  console.log("Starting start interval jobs...");
+  startCronJobs();
+}, 1000 * 60);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
