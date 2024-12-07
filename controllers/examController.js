@@ -136,9 +136,10 @@ exports.deleteExam = async (req, res) => {
 exports.submitGuardianKey = async (req, res) => {
   try {
     const { key } = req.body;
+    console.log(req.body,key)
     const exam = await Exam.findOne({ 
       status: { $in: ['scheduled', 'in-progress'] },
-      'guardianKeys.guardian': req.user._id
+      'guardianKeys.guardian': req.user.id
     });
 
     if (!exam) {
@@ -149,7 +150,7 @@ exports.submitGuardianKey = async (req, res) => {
     }
 
     const guardianKeyIndex = exam.guardianKeys.findIndex(
-      gk => gk.guardian.toString() === req.user._id.toString()
+      gk => gk.guardian.toString() === req.user.id.toString()
     );
 
     if (exam.guardianKeys[guardianKeyIndex].keySubmitted) {
@@ -183,9 +184,9 @@ exports.checkKeySubmissionStatus = async (req, res) => {
   try {
     const exam = await Exam.findOne({ 
       status: { $in: ['scheduled', 'in-progress'] },
-      'guardianKeys.guardian': req.user._id
+      'guardianKeys.guardian': req.user.id
     });
-
+    console.log(exam)
     if (!exam) {
       return res.json({
         success: true,
@@ -195,9 +196,9 @@ exports.checkKeySubmissionStatus = async (req, res) => {
     }
 
     const guardianKey = exam.guardianKeys.find(
-      gk => gk.guardian.toString() === req.user._id.toString()
+      gk => gk.guardian.toString() === req.user.id.toString()
     );
-
+    console.log(guardianKey)
     res.json({
       success: true,
       hasSubmitted: guardianKey.keySubmitted,
