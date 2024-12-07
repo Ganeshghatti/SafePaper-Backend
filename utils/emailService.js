@@ -48,4 +48,43 @@ const sendKeyShare = async (guardianEmail, keyShare, paperSetterName) => {
   }
 };
 
-module.exports = { sendKeyShare };
+const sendExamNotification = async (guardianEmail, examDetails) => {
+  const mailOptions = {
+    from: 'ganeshghatti6@gmail.com',
+    to: guardianEmail,
+    subject: 'SafePaper - Upcoming Exam Key Submission Required',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2c3e50; text-align: center;">SafePaper Exam Notification</h2>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <p>An exam has been scheduled and requires your key submission:</p>
+          
+          <div style="background-color: #e9ecef; padding: 15px; border-radius: 5px;">
+            <p><strong>Date:</strong> ${new Date(examDetails.date).toLocaleDateString()}</p>
+            <p><strong>Start Time:</strong> ${examDetails.startTime}</p>
+            <p><strong>End Time:</strong> ${examDetails.endTime}</p>
+          </div>
+          
+          <p style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 5px;">
+            🔒 Please ensure you submit your key share before the exam start time.
+          </p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Exam notification sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending exam notification:', error);
+    throw error;
+  }
+};
+
+module.exports = {
+  sendKeyShare,
+  sendExamNotification
+};
