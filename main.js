@@ -8,7 +8,7 @@ const questionRoutes = require("./routes/questionRoutes");
 const examRoutes = require("./routes/examRoutes");
 const dotenv = require("dotenv");
 const path = require("path");
-const { startCronJobs } = require("./services/cronService");
+const { startCronJobs } = require("./services/cronServices");
 
 dotenv.config({ path: path.join(__dirname, "api", ".env") });
 
@@ -33,7 +33,7 @@ app.use("/api/exams", examRoutes);
 
 // Connect to Database
 connectDB();
-startCronJobs()
+setInterval(startCronJobs, 1000 * 60);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
