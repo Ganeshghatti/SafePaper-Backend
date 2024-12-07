@@ -99,7 +99,6 @@ exports.getCurrentExam = async (req, res) => {
     });
   }
 };
-
 exports.deleteExam = async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
@@ -118,11 +117,13 @@ exports.deleteExam = async (req, res) => {
       });
     }
 
+    await Question.deleteMany({});
+
     await exam.deleteOne();
 
     res.json({
       success: true,
-      message: 'Exam deleted successfully'
+      message: 'Exam and its questions deleted successfully'
     });
   } catch (error) {
     console.error('Delete exam error:', error);
