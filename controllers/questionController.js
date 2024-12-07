@@ -6,22 +6,57 @@ const { v4: uuidv4 } = require('uuid');
 
 // Get all guardians
 exports.getAllGuardians = async (req, res) => {
-  console.log('Fetching all guardians');
+  console.log('Fetching available guardians');
   try {
-    const guardians = await User.find(
+    // First get all guardians
+    const allGuardians = await User.find(
       { role: 'guardian' },
       'name email'
     );
-    console.log(`Found ${guardians.length} guardians`);
+    console.log(`Found ${allGuardians.length} total guardians`);
+
+    // Get guardians who are already assigned to pending questions
+    const assignedGuardians = await Question.find(
+      { status: 'pending' },
+      'guardians'
+    ).populate('guardians', '_id');
+
+    // Create a Set of assigned guardian IDs for efficient lookup
+    const assignedGuardianIds = new Set(
+      assignedGuardians.flatMap(question => 
+        question.guardians.map(guardian => 
+          guardian._id.toString()
+        )
+      )
+    );
+
+    console.log('Assigned guardian IDs:', assignedGuardianIds);
+
+    // Filter out guardians who are already assigned
+    const availableGuardians = allGuardians.filter(guardian => 
+      !assignedGuardianIds.has(guardian._id.toString())
+    );
+
+    console.log(`Found ${availableGuardians.length} available guardians`);
 
     // Check if the paper setter has already set questions
     const existingQuestion = await Question.findOne({ paperSetter: req.user._id });
     const hasSetQuestions = existingQuestion !== null;
 
-    res.json({ success: true, data: guardians, hasSetQuestions });
+    res.json({ 
+      success: true, 
+      data: availableGuardians, 
+      hasSetQuestions,
+      totalGuardians: allGuardians.length,
+      availableGuardians: availableGuardians.length
+    });
+
   } catch (error) {
-    console.error('Error fetching guardians:', error);
-    res.status(500).json({ success: false, message: 'Error fetching guardians' });
+    console.error('Error fetching available guardians:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching available guardians' 
+    });
   }
 };
 // Create questions

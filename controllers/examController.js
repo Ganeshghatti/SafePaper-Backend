@@ -31,12 +31,12 @@ exports.scheduleExam = async (req, res) => {
       });
     }
 
-    // Get random 100 questions
+    // Get random 25 questions
     const questions = await Question.aggregate([
-      { $sample: { size: 100 } }
+      { $sample: { size: 25 } }
     ]);
 
-    if (questions.length < 100) {
+    if (questions.length < 25) {
       return res.status(400).json({
         success: false,
         message: 'Not enough questions in the system'
@@ -136,7 +136,7 @@ exports.deleteExam = async (req, res) => {
 exports.submitGuardianKey = async (req, res) => {
   try {
     const { key } = req.body;
-    console.log(req.body,key)
+
     const exam = await Exam.findOne({ 
       status: { $in: ['scheduled', 'in-progress'] },
       'guardianKeys.guardian': req.user.id
@@ -186,7 +186,7 @@ exports.checkKeySubmissionStatus = async (req, res) => {
       status: { $in: ['scheduled', 'in-progress'] },
       'guardianKeys.guardian': req.user.id
     });
-    console.log(exam)
+
     if (!exam) {
       return res.json({
         success: true,
@@ -198,7 +198,7 @@ exports.checkKeySubmissionStatus = async (req, res) => {
     const guardianKey = exam.guardianKeys.find(
       gk => gk.guardian.toString() === req.user.id.toString()
     );
-    console.log(guardianKey)
+
     res.json({
       success: true,
       hasSubmitted: guardianKey.keySubmitted,
@@ -217,4 +217,52 @@ exports.checkKeySubmissionStatus = async (req, res) => {
       message: 'Error checking key submission status'
     });
   }
-}; 
+};
+
+exports.getExamCenterExamDetails = async (req, res) => {
+  try {
+
+    const exam = await Exam.findOne({ 
+      status: { $in: ['scheduled', 'in-progress'] } 
+    }).select('date startTime endTime status decodedQuestions');
+
+    if (!exam) {
+      return res.json({
+        success: true,
+        message: 'No active exam found'
+      });
+    }
+
+    // Only send decoded questions if they exist
+    const examResponse = {
+      date: exam.date,
+      startTime: exam.startTime,
+      endTime: exam.endTime,
+      status: exam.status,
+      hasDecodedQuestions: exam.decodedQuestions.length > 0
+    };
+
+    if (exam.decodedQuestions.length > 0) {
+      console.log(`Found ${exam.decodedQuestions.length} decoded questions`);
+      examResponse.questions = exam.decodedQuestions.map(q => ({
+        id: q.questionId,
+        question: q.question,
+        options: q.options
+      }));
+    }
+
+    console.log('Sending exam response:', examResponse);
+
+    res.json({
+      success: true,
+      examDetails: examResponse
+    });
+
+  } catch (error) {
+    console.error('Get exam center exam details error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching exam details'
+    });
+  }
+};

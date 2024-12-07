@@ -11,6 +11,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.10.0",
     "mongoose": "^8.8.1",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.9.16",
     "shamirs-secret-sharing": "^2.0.0",
     "uuid": "^11.0.3",

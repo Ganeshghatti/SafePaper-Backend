@@ -35,6 +35,16 @@ const examSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Question'
   }],
+  decodedQuestions: [{
+    questionId: String,
+    question: String,
+    options: [String],
+    correctOption: String,
+    isDecoded: {
+      type: Boolean,
+      default: false
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

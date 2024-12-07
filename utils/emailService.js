@@ -10,6 +10,7 @@ const transporter = nodemailer.createTransport({
 
 const sendKeyShare = async (guardianEmail, keyShare, paperSetterName) => {
   console.log(`Attempting to send key share to guardian: ${guardianEmail}`);
+  console.log(`keyShare: ${keyShare}`);
   
   const mailOptions = {
     from: 'ganeshghatti6@gmail.com',
