@@ -28,6 +28,7 @@ const examSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    key: String,
     submittedAt: Date
   }],
   selectedQuestions: [{

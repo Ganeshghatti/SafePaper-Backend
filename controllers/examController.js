@@ -21,12 +21,6 @@ exports.scheduleExam = async (req, res) => {
 
     // Validate if date is in future
     const examDate = new Date(date);
-    if (examDate < new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Exam date must be in the future'
-      });
-    }
 
     // Get all guardians
     const guardians = await User.find({ role: 'guardian' });
@@ -135,6 +129,91 @@ exports.deleteExam = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting exam'
+    });
+  }
+};
+
+exports.submitGuardianKey = async (req, res) => {
+  try {
+    const { key } = req.body;
+    const exam = await Exam.findOne({ 
+      status: { $in: ['scheduled', 'in-progress'] },
+      'guardianKeys.guardian': req.user._id
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active exam found'
+      });
+    }
+
+    const guardianKeyIndex = exam.guardianKeys.findIndex(
+      gk => gk.guardian.toString() === req.user._id.toString()
+    );
+
+    if (exam.guardianKeys[guardianKeyIndex].keySubmitted) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already submitted your key'
+      });
+    }
+
+    exam.guardianKeys[guardianKeyIndex].keySubmitted = true;
+    exam.guardianKeys[guardianKeyIndex].key = key;
+    exam.guardianKeys[guardianKeyIndex].submittedAt = new Date();
+
+    await exam.save();
+
+    res.json({
+      success: true,
+      message: 'Key submitted successfully'
+    });
+
+  } catch (error) {
+    console.error('Submit guardian key error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error submitting key'
+    });
+  }
+};
+
+exports.checkKeySubmissionStatus = async (req, res) => {
+  try {
+    const exam = await Exam.findOne({ 
+      status: { $in: ['scheduled', 'in-progress'] },
+      'guardianKeys.guardian': req.user._id
+    });
+
+    if (!exam) {
+      return res.json({
+        success: true,
+        hasSubmitted: false,
+        message: 'No active exam found'
+      });
+    }
+
+    const guardianKey = exam.guardianKeys.find(
+      gk => gk.guardian.toString() === req.user._id.toString()
+    );
+
+    res.json({
+      success: true,
+      hasSubmitted: guardianKey.keySubmitted,
+      examDetails: {
+        date: exam.date,
+        startTime: exam.startTime,
+        endTime: exam.endTime,
+        status: exam.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Check key submission status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error checking key submission status'
     });
   }
 }; 
