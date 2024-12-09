@@ -296,13 +296,6 @@ exports.requestPaper = async (req, res) => {
     const timeDiff = (examDate - now) / (1000 * 60);
     console.log(`Time until exam start: ${timeDiff.toFixed(2)} minutes`);
 
-    if (timeDiff > 5 || timeDiff <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Paper can only be requested within 5 minutes before exam start'
-      });
-    }
-
     const decodedQuestions = [];
 
     // Process each question individually
