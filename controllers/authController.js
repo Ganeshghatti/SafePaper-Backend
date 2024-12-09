@@ -4,14 +4,18 @@ const User = require('../models/User');
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { credentials } = req.body;
+
+    const role=req.body.role.role;
     
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: credentials.email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password);
+    if(user.role !== role){
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+    const isMatch = await bcrypt.compare(credentials.password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -29,6 +33,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
