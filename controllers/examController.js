@@ -2,6 +2,7 @@ const Exam = require('../models/Exam');
 const Question = require('../models/Question');
 const User = require('../models/User');
 const { sendExamNotification } = require('../utils/emailService');
+const EncryptionService = require('../utils/encryption');
 
 exports.scheduleExam = async (req, res) => {
   try {
@@ -99,6 +100,7 @@ exports.getCurrentExam = async (req, res) => {
     });
   }
 };
+
 exports.deleteExam = async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
@@ -252,8 +254,6 @@ exports.getExamCenterExamDetails = async (req, res) => {
       }));
     }
 
-    console.log('Sending exam response:', examResponse);
-
     res.json({
       success: true,
       examDetails: examResponse
@@ -264,6 +264,123 @@ exports.getExamCenterExamDetails = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching exam details'
+    });
+  }
+};
+
+exports.requestPaper = async (req, res) => {
+  try {
+    console.log('Processing paper request...');
+    const now = new Date();
+
+    const exam = await Exam.findOne({ 
+      status: 'scheduled',
+      decodedQuestions: { $size: 0 }
+    }).populate({
+      path: 'selectedQuestions',
+      populate: { path: 'guardians' }
+    }).populate('guardianKeys.guardian');
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: 'No scheduled exam found'
+      });
+    }
+
+    // Check if within 5 minutes of exam start
+    const examDate = new Date(exam.date);
+    const [hours, minutes] = exam.startTime.split(':');
+    examDate.setHours(parseInt(hours), parseInt(minutes));
+
+    const timeDiff = (examDate - now) / (1000 * 60);
+    console.log(`Time until exam start: ${timeDiff.toFixed(2)} minutes`);
+
+    if (timeDiff > 5 || timeDiff <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Paper can only be requested within 5 minutes before exam start'
+      });
+    }
+
+    const decodedQuestions = [];
+
+    // Process each question individually
+    for (const question of exam.selectedQuestions) {
+      try {
+        console.log(`Processing question ID: ${question._id}`);
+        
+        const questionGuardianIds = question.guardians.map(g => g._id.toString());
+        const relevantKeys = exam.guardianKeys
+          .filter(gk => questionGuardianIds.includes(gk.guardian._id.toString()))
+          .map(gk => Buffer.from(gk.key, 'hex'));
+
+        if (relevantKeys.length !== 3) {
+          console.log(`Skipping question ${question._id} - missing guardian keys`);
+          continue;
+        }
+
+        const originalKey = EncryptionService.combineKeyShares(relevantKeys);
+
+        const decryptedQuestion = EncryptionService.decrypt(
+          question.encryptedData.question,
+          originalKey
+        );
+
+        const decryptedOptions = question.encryptedData.options.map(opt => 
+          EncryptionService.decrypt(opt, originalKey)
+        );
+
+        const decryptedCorrectOption = EncryptionService.decrypt(
+          question.encryptedData.correctOption,
+          originalKey
+        );
+
+        decodedQuestions.push({
+          questionId: question._id,
+          question: decryptedQuestion,
+          options: decryptedOptions,
+          correctOption: decryptedCorrectOption,
+          isDecoded: true
+        });
+
+      } catch (error) {
+        console.error(`Error decoding question ${question._id}:`, error);
+        continue;
+      }
+    }
+
+    if (decodedQuestions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No questions could be decoded. Please try again.'
+      });
+    }
+
+    exam.decodedQuestions = decodedQuestions;
+    await exam.save();
+
+    res.json({
+      success: true,
+      message: `Successfully decoded ${decodedQuestions.length} questions`,
+      examDetails: {
+        date: exam.date,
+        startTime: exam.startTime,
+        endTime: exam.endTime,
+        status: exam.status,
+        questions: decodedQuestions.map(q => ({
+          id: q.questionId,
+          question: q.question,
+          options: q.options
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Request paper error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error processing paper request'
     });
   }
 };

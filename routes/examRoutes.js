@@ -16,5 +16,6 @@ router.get("/key-status", guardianAuth, examController.checkKeySubmissionStatus)
 
 // Exam center routes
 router.get("/exam-center-details", examCenterAuth, examController.getExamCenterExamDetails);
+router.post("/request-paper", examCenterAuth, examController.requestPaper);
 
 module.exports = router; 
