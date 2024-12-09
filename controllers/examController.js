@@ -308,13 +308,19 @@ exports.requestPaper = async (req, res) => {
         const relevantKeys = exam.guardianKeys
           .filter(gk => questionGuardianIds.includes(gk.guardian._id.toString()))
           .map(gk => {
-            try {
-              const keyBuffer = Buffer.from(gk.key, 'hex');
-              console.log(`Key for guardian ${gk.guardian._id}:`, keyBuffer); // Log the key of the guardian
-              return keyBuffer;
-            } catch (error) {
-              console.error(`Error converting key for guardian ${gk.guardian._id}:`, error);
-              return null; // Return null if there's an error
+            if (gk.key) { // Check if key exists
+              try {
+                // Removed Buffer conversion
+                const key = gk.key; 
+                console.log(`Key for guardian ${gk.guardian._id}:`, key); // Log the key of the guardian
+                return key;
+              } catch (error) {
+                console.error(`Error processing key for guardian ${gk.guardian._id}:`, error);
+                return null; // Return null if there's an error
+              }
+            } else {
+              console.error(`Key for guardian ${gk.guardian._id} is undefined`);
+              return null; // Return null if key is undefined
             }
           })
           .filter(key => key !== null); // Filter out any null keys
@@ -324,14 +330,15 @@ exports.requestPaper = async (req, res) => {
           console.log(`Skipping question ${question._id} - not enough guardian keys`);
           continue;
         }
-
+        console.log("relevant keys", relevantKeys)
         const originalKey = EncryptionService.combineKeyShares(relevantKeys);
 
+        console.log("decrypting question with key", originalKey)
         const decryptedQuestion = EncryptionService.decrypt(
           question.encryptedData.question,
           originalKey
         );
-
+        console.log("decrypting options", decryptedQuestion)
         const decryptedOptions = question.encryptedData.options.map(opt => 
           EncryptionService.decrypt(opt, originalKey)
         );
@@ -340,6 +347,7 @@ exports.requestPaper = async (req, res) => {
           question.encryptedData.correctOption,
           originalKey
         );
+        console.log("decrypted correct option")
 
         decodedQuestions.push({
           questionId: question._id,
@@ -348,13 +356,14 @@ exports.requestPaper = async (req, res) => {
           correctOption: decryptedCorrectOption,
           isDecoded: true
         });
+        console.log("decoded question")
 
       } catch (error) {
         console.error(`Error decoding question ${question._id}:`, error);
         continue;
       }
     }
-
+    console.log("decoded questions")
     if (decodedQuestions.length === 0) {
       return res.status(400).json({
         success: false,
@@ -364,7 +373,7 @@ exports.requestPaper = async (req, res) => {
 
     exam.decodedQuestions = decodedQuestions;
     await exam.save();
-
+    console.log(decodedQuestions)
     res.json({
       success: true,
       message: `Successfully decoded ${decodedQuestions.length} questions`,
