@@ -75,7 +75,7 @@ exports.scheduleExam = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Schedule exam error:', error);
+    console.log('Schedule exam error:', error);
     res.status(500).json({
       success: false,
       message: 'Error scheduling exam'
