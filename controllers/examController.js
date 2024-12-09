@@ -304,12 +304,24 @@ exports.requestPaper = async (req, res) => {
         console.log(`Processing question ID: ${question._id}`);
         
         const questionGuardianIds = question.guardians.map(g => g._id.toString());
+        console.log(questionGuardianIds);
         const relevantKeys = exam.guardianKeys
           .filter(gk => questionGuardianIds.includes(gk.guardian._id.toString()))
-          .map(gk => Buffer.from(gk.key, 'hex'));
+          .map(gk => {
+            try {
+              const keyBuffer = Buffer.from(gk.key, 'hex');
+              console.log(`Key for guardian ${gk.guardian._id}:`, keyBuffer); // Log the key of the guardian
+              return keyBuffer;
+            } catch (error) {
+              console.error(`Error converting key for guardian ${gk.guardian._id}:`, error);
+              return null; // Return null if there's an error
+            }
+          })
+          .filter(key => key !== null); // Filter out any null keys
 
-        if (relevantKeys.length !== 3) {
-          console.log(`Skipping question ${question._id} - missing guardian keys`);
+        // Allow processing if at least 2 keys are available
+        if (relevantKeys.length < 2) {
+          console.log(`Skipping question ${question._id} - not enough guardian keys`);
           continue;
         }
 
@@ -370,7 +382,7 @@ exports.requestPaper = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Request paper error:', error);
+    console.log('Request paper error:', error);
     res.status(500).json({
       success: false,
       message: 'Error processing paper request'
