@@ -17,7 +17,6 @@ class EncryptionService {
       const cipher = crypto.createCipheriv(ALGORITHM, key, null);
       let encrypted = cipher.update(data, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      console.log("encrypted data", encrypted)
       return encrypted;
     } catch (error) {
       console.error('Encryption error:', error);
@@ -27,14 +26,17 @@ class EncryptionService {
 
   static decrypt(encryptedData, key) {
     try {
-      // if (key.length !== KEY_LENGTH) {
-      //   console.log(`Adjusting key length from ${key.length} to ${KEY_LENGTH} bytes`);
-      //   const adjustedKey = Buffer.alloc(KEY_LENGTH);
-      //   key.copy(adjustedKey, 0, 0, Math.min(key.length, KEY_LENGTH));
-      //   key = adjustedKey;
-      // }
+      // Ensure key is a Buffer and has correct length
+      let finalKey = Buffer.isBuffer(key) ? key : Buffer.from(key);
+      
+      if (finalKey.length !== KEY_LENGTH) {
+        console.log(`Adjusting key length from ${finalKey.length} to ${KEY_LENGTH} bytes`);
+        const adjustedKey = Buffer.alloc(KEY_LENGTH);
+        finalKey.copy(adjustedKey, 0, 0, Math.min(finalKey.length, KEY_LENGTH));
+        finalKey = adjustedKey;
+      }
 
-      const decipher = crypto.createDecipheriv(ALGORITHM, key, null);
+      const decipher = crypto.createDecipheriv(ALGORITHM, finalKey, null);
       let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
       return decrypted;
@@ -50,19 +52,24 @@ class EncryptionService {
 
   static combineKeyShares(shares) {
     try {
-      // Use all valid shares
-      const validShares = shares.filter(share => share !== null);
-      console.log('Using shares:', validShares);
+      // Take only first 2 shares since threshold is 2
+      const requiredShares = shares.slice(0, 2);
+      console.log('Using shares:', requiredShares);
       
       // Combine shares
-      const combinedKey = sss.combine(validShares);
+      const combinedKey = sss.combine(requiredShares);
       console.log('Raw combined key length:', combinedKey.length);
       
-      return combinedKey;
+      // Convert combined key to Buffer and ensure correct length
+      const finalKey = Buffer.alloc(KEY_LENGTH);
+      Buffer.from(combinedKey).copy(finalKey, 0, 0, KEY_LENGTH);
+      
+      return finalKey;
     } catch (error) {
       console.error('Error combining shares:', error);
       throw error;
     }
   }
 }
+
 module.exports = EncryptionService;
