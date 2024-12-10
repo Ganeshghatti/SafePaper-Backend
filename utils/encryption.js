@@ -27,12 +27,12 @@ class EncryptionService {
 
   static decrypt(encryptedData, key) {
     try {
-      if (key.length !== KEY_LENGTH) {
-        console.log(`Adjusting key length from ${key.length} to ${KEY_LENGTH} bytes`);
-        const adjustedKey = Buffer.alloc(KEY_LENGTH);
-        key.copy(adjustedKey, 0, 0, Math.min(key.length, KEY_LENGTH));
-        key = adjustedKey;
-      }
+      // if (key.length !== KEY_LENGTH) {
+      //   console.log(`Adjusting key length from ${key.length} to ${KEY_LENGTH} bytes`);
+      //   const adjustedKey = Buffer.alloc(KEY_LENGTH);
+      //   key.copy(adjustedKey, 0, 0, Math.min(key.length, KEY_LENGTH));
+      //   key = adjustedKey;
+      // }
 
       const decipher = crypto.createDecipheriv(ALGORITHM, key, null);
       let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
